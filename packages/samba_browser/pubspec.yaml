@@ -1,0 +1,27 @@
+name: samba_browser
+description: A package capable of performing several operations on shares using the SMB2 specification.
+version: 0.0.2
+repository: https://github.com/Schloool/samba-browser-flutter
+issue_tracker: https://github.com/Schloool/samba-browser-flutter/issues
+
+environment:
+  sdk: ">=2.16.2 <3.0.0"
+  flutter: ">=2.5.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^1.0.0
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: dev.schlosser.samba_browser
+        pluginClass: SambaBrowserPlugin
+      ios:
+        pluginClass: SambaBrowserPlugin
