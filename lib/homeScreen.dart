@@ -1,6 +1,7 @@
 // lib/screens/home_screen.dart
 import 'package:flexio/preferences.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'package:samba_browser/samba_browser.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
@@ -55,6 +56,27 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+
+
+  bool _isSystemShare(String name) {
+    final upper = name.toUpperCase();
+    return upper == 'IPC\$' ||
+        upper == 'ADMIN\$' ||
+        upper.startsWith('PRINT\$') ||
+        upper.startsWith('.') || // hidden files
+        name.trim().isEmpty;
+  }
+
+
+  String joinSmbPath(String base, String sub) {
+    // Remove trailing slash from base if any
+    var baseClean = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
+    // Remove leading slash from sub if any
+    var subClean = sub.startsWith('/') ? sub.substring(1) : sub;
+    return '$baseClean/$subClean';
+  }
+
+
   Future<void> _loadFiles([String subPath = '']) async {
     setState(() {
       _loading = true;
@@ -64,48 +86,95 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       await _saveCredentials();
-      final fullPath = subPath.isEmpty ? _baseUrl : '$_baseUrl$subPath/';
+
+      final isAbsolutePath = subPath.toLowerCase().startsWith('smb://');
+      final fullPath = isAbsolutePath
+          ? subPath
+          : (subPath.isEmpty ? _baseUrl : '$_baseUrl$subPath');
+
+      debugPrint('\x1B[34m➡️ Loading path: $fullPath\x1B[0m'); // Blue color for info
+
       _currentPath = subPath;
+
       final shares = await SambaBrowser.getShareList(
         fullPath,
         '',
         _userController.text.trim(),
         _passController.text,
       );
+
+      debugPrint('\x1B[32m✅ Shares received: $shares\x1B[0m'); // Green color for success
+
+      final rawFiles = List<String>.from(shares.cast<String>());
+      debugPrint('\x1B[36m📂 Raw shares: $rawFiles\x1B[0m');
+
       setState(() {
-        _files = shares.cast<String>();
+        _files = rawFiles.where((fullPath) {
+          // Extract share/folder name from full path
+          final parts = fullPath.split('/');
+          final name = parts.isNotEmpty ? parts.lastWhere((p) => p.isNotEmpty, orElse: () => '') : '';
+          final isSystem = _isSystemShare(name);
+          debugPrint('🔍 Checking "$fullPath" (name: "$name") => isSystem: $isSystem');
+          return !isSystem;
+        }).toList();
+
         _status = 'Found ${_files.length} items';
       });
-    } catch (e) {
+
+
+    } catch (e, stackTrace) {
+      debugPrint('\x1B[31m❌ Error loading files: $e\x1B[0m');
+      debugPrint('\x1B[33m⚠️ StackTrace:\n$stackTrace\x1B[0m');
       setState(() => _status = 'Error: $e');
     } finally {
       setState(() => _loading = false);
     }
   }
 
-  void _handleTap(String name) {
-    final isFolder = !name.contains('.') || name.endsWith('/');
-    final isImage = name.endsWith('.jpg') || name.endsWith('.png');
-    final isVideo = name.endsWith('.mp4');
 
-    if (isFolder) {
-      _loadFiles('$_currentPath/$name');
-    } else if (isImage) {
-      final imageUrl = Uri.parse('$_baseUrl$_currentPath/$name'.replaceAll('//', '/'));
-      Navigator.push(context, MaterialPageRoute(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: Text(name)),
-          body: Center(child: Image.network(imageUrl.toString())),
-        ),
-      ));
-    } else if (isVideo) {
-      final videoUrl = Uri.parse('$_baseUrl$_currentPath/$name'.replaceAll('//', '/'));
-      Navigator.push(context, MaterialPageRoute(
-        builder: (_) => VideoPlayerScreen(videoUrl: videoUrl.toString()),
-      ));
-    } else {
-      final url = Uri.parse('$_baseUrl$_currentPath/$name'.replaceAll('//', '/'));
-      launchUrl(url, mode: LaunchMode.externalApplication);
+  void _handleTap(String name) async {
+    try {
+      final lowerName = name.toLowerCase();
+      final isImage = lowerName.endsWith('.jpg') || lowerName.endsWith('.png');
+      final isVideo = lowerName.endsWith('.mp4') ||
+          lowerName.endsWith('.mkv') ||
+          lowerName.endsWith('.avi') ||
+          lowerName.endsWith('.mov');
+
+      debugPrint('📁 Tapped item: $name');
+
+      if (isImage) {
+        final imageUrl = Uri.parse(joinSmbPath(joinSmbPath(_baseUrl, _currentPath), name));
+        debugPrint('🖼️ Opening image URL: $imageUrl');
+        Navigator.push(context, MaterialPageRoute(
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: Text(name)),
+            body: Center(child: Image.network(imageUrl.toString())),
+          ),
+        ));
+      } else if (isVideo) {
+        // Build the full SMB URL from base, current path and filename
+        final videoUrl = name;
+        debugPrint('🎬 Opening video URL: $videoUrl');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => VideoPlayerScreen(videoUrl: videoUrl),
+          ),
+        );
+      } else {
+        // Folder name might be absolute or relative
+        final isAbsolutePath = name.toLowerCase().startsWith('smb://');
+        final newPath = isAbsolutePath ? name : '$_currentPath/$name';
+        debugPrint('📁 Loading folder path: $newPath');
+        await _loadFiles(newPath);
+      }
+    } catch (e, stack) {
+      debugPrint('\x1B[31m❌ Error in _handleTap: $e\x1B[0m');
+      debugPrint('\x1B[33m⚠️ StackTrace: $stack\x1B[0m');
+      setState(() {
+        _status = 'Failed to open "$name": $e';
+      });
     }
   }
 
@@ -113,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SMB File Viewer'),
+        title: const Text('Flexio'),
         actions: [
           if (_currentPath.isNotEmpty)
             IconButton(
@@ -161,6 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+
 class VideoPlayerScreen extends StatefulWidget {
   final String videoUrl;
   const VideoPlayerScreen({super.key, required this.videoUrl});
@@ -170,45 +240,58 @@ class VideoPlayerScreen extends StatefulWidget {
 }
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
-  late VideoPlayerController _controller;
+  late VlcPlayerController _vlcController;
+  bool _isPlaying = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.network(widget.videoUrl)
-      ..initialize().then((_) {
-        setState(() {});
-        _controller.play();
-      });
+
+    _vlcController = VlcPlayerController.network(
+      widget.videoUrl,
+      // hwAcc: HwAcc.FULL,
+      autoPlay: true,
+      options: VlcPlayerOptions(
+        advanced: VlcAdvancedOptions([
+          '--network-caching=1000',  // optional: tweak buffering time (ms)
+          '--rtsp-tcp',              // optional for some streams
+        ]),
+      ),
+    );
+
+    _vlcController.addListener(() {
+      if (!_isPlaying && _vlcController.value.isPlaying) {
+        setState(() {
+          _isPlaying = true;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _vlcController.stop();
+    _vlcController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Video Preview')),
+      appBar: AppBar(
+        title: Text(widget.videoUrl.split('/').last),
+      ),
       body: Center(
-        child: _controller.value.isInitialized
+        child: _isPlaying
             ? AspectRatio(
-          aspectRatio: _controller.value.aspectRatio,
-          child: VideoPlayer(_controller),
+          aspectRatio: 16 / 9,
+          child: VlcPlayer(
+            controller: _vlcController,
+            aspectRatio: 16 / 9,
+            placeholder: const Center(child: CircularProgressIndicator()),
+          ),
         )
             : const CircularProgressIndicator(),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          setState(() {
-            _controller.value.isPlaying ? _controller.pause() : _controller.play();
-          });
-        },
-        child: Icon(
-          _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
-        ),
       ),
     );
   }
