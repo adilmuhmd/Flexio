@@ -14,7 +14,7 @@ class SmbApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'SMB File Viewer',
+      title: 'Flexio',
       home: HomeScreen(),
     );
   }
