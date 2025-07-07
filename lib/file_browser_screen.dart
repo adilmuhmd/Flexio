@@ -148,12 +148,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen>
           MaterialPageRoute(
             builder: (_) => MovieDetailScreen(
               name: name,
-              fullPath: fullPath,
-              posterUrl: fullPath.replaceAll(
-                  RegExp(r'\.(mp4|mkv|avi|mov)$'), '.jpg'),
-              description:
-              "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus.",
-              cast: ["Actor 1", "Actor 2", "Actor 3"],
+              originalName: name.replaceAll(RegExp(r'\.(mp4|mkv|avi|mov)$'), ''), fullPath: '', // pass cleaned name
             ),
           ),
         );
