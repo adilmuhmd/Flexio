@@ -22,8 +22,7 @@ class _FileGridItemState extends State<FileGridItem> {
   bool _isLoading = false;
   bool _isVideo = false;
 
-  final apiKey = dotenv.env['TMDB_API_KEY'];
-  static const String _tmdbApiKey = '';
+  static final _tmdbApiKey = dotenv.env['TMDB_API_KEY'] ?? '';
   static const String _tmdbBaseUrl = 'https://api.themoviedb.org/3';
   static const String _tmdbImageBaseUrl = 'https://image.tmdb.org/t/p/w185';
 
@@ -114,7 +113,7 @@ class _FileGridItemState extends State<FileGridItem> {
   Future<bool> _searchTmdb(String query, {String? year, bool isMovie = true}) async {
     final type = isMovie ? 'movie' : 'tv';
     final url = Uri.parse(
-      '$_tmdbBaseUrl/search/$type?api_key=$apiKey'
+      '$_tmdbBaseUrl/search/$type?api_key=$_tmdbApiKey'
           '&query=${Uri.encodeQueryComponent(query)}'
           '${year != null ? '&year=$year' : ''}',
     );

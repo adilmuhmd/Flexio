@@ -1,13 +1,21 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'homeScreen.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
 void main() async {
-  await dotenv.load(); // Load .env file
-  runApp(const SmbApp());
+  if (dotenv.env['TMDB_API_KEY'] == null) {
+    print("❌ .env file not loaded properly");
+  } else {
+    print("✅ TMDB_API_KEY loaded: ${dotenv.env['TMDB_API_KEY']}");
+  }
+
+  WidgetsFlutterBinding.ensureInitialized(); // Required
+  await dotenv.load(); // ✅ loads .env from root
+
+  runApp(SmbApp());
 }
 
 class SmbApp extends StatelessWidget {
