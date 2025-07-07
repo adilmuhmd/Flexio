@@ -26,15 +26,7 @@
 
 ---
 
-## 🛠️ Tech Stack
 
-- **Flutter** (cross-platform mobile development)
-- **Dart** (language)
-- **video_player** (media playback)
-- **flutter_ftp**, **smb_client** or platform channels (network access)
-- **TMDB API** (for metadata)
-
----
 
 ## 📷 Screenshots
 
