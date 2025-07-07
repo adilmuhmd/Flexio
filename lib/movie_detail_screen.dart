@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flexio/videoPlayerScreen.dart';
@@ -26,7 +27,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   List<Map<String, dynamic>> cast = [];
   bool _loading = true;
 
-  static const _tmdbApiKey = '930468fda014966745238047b14e0346';
+  final apiKey = dotenv.env['TMDB_API_KEY'];
+
+  static const _tmdbApiKey = '';
   static const _tmdbBaseUrl = 'https://api.themoviedb.org/3';
   static const _tmdbImageBaseUrl = 'https://image.tmdb.org/t/p/w500';
 
@@ -88,7 +91,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   Future<bool> _searchAndSetData(String query, {String? year, bool isMovie = true}) async {
     final type = isMovie ? 'movie' : 'tv';
     final url = Uri.parse(
-      '$_tmdbBaseUrl/search/$type?api_key=$_tmdbApiKey'
+      '$_tmdbBaseUrl/search/$type?api_key=$apiKey'
           '&query=${Uri.encodeQueryComponent(query)}'
           '${year != null ? '&year=$year' : ''}',
     );
@@ -117,7 +120,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   Future<void> _fetchCast(int id, {bool isMovie = true}) async {
     final type = isMovie ? 'movie' : 'tv';
-    final url = Uri.parse('$_tmdbBaseUrl/$type/$id/credits?api_key=$_tmdbApiKey');
+    final url = Uri.parse('$_tmdbBaseUrl/$type/$id/credits?api_key=$apiKey');
 
     final response = await http.get(url);
     if (response.statusCode == 200) {

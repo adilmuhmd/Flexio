@@ -2,8 +2,11 @@
 import 'package:flutter/material.dart';
 
 import 'homeScreen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+
+void main() async {
+  await dotenv.load(); // Load .env file
   runApp(const SmbApp());
 }
 
