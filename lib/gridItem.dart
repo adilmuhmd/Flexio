@@ -9,6 +9,9 @@ class FileGridItem extends StatefulWidget {
 
   const FileGridItem({super.key, required this.name, required this.onTap});
 
+  // Static cache map to store poster URLs by filename
+  static final Map<String, String> _posterUrlCache = {};
+
   @override
   _FileGridItemState createState() => _FileGridItemState();
 }
@@ -18,7 +21,6 @@ class _FileGridItemState extends State<FileGridItem> {
   bool _isLoading = false;
   bool _isVideo = false;
 
-  // Replace with your TMDb API key
   static const String _tmdbApiKey = '930468fda014966745238047b14e0346';
   static const String _tmdbBaseUrl = 'https://api.themoviedb.org/3';
   static const String _tmdbImageBaseUrl = 'https://image.tmdb.org/t/p/w185';
@@ -27,8 +29,14 @@ class _FileGridItemState extends State<FileGridItem> {
   void initState() {
     super.initState();
     _isVideo = _isVideoFile(widget.name);
+
     if (_isVideo) {
-      _fetchPoster();
+      // Check if cached URL exists and set immediately
+      if (FileGridItem._posterUrlCache.containsKey(widget.name)) {
+        _posterUrl = FileGridItem._posterUrlCache[widget.name];
+      } else {
+        _fetchPoster();
+      }
     }
   }
 
@@ -41,20 +49,14 @@ class _FileGridItemState extends State<FileGridItem> {
   }
 
   String _cleanTvShowTitle(String title) {
-    // Find first episode pattern and cut title before that
     final match = RegExp(r'[- ]?s\d{2}e\d{2}', caseSensitive: false).firstMatch(title) ??
         RegExp(r'[- ]?s\d{4}', caseSensitive: false).firstMatch(title);
 
     if (match != null) {
-      // Return substring before episode pattern
       return title.substring(0, match.start).trim();
     }
-
-    // If no pattern found, return original trimmed title
     return title.trim();
   }
-
-
 
   Future<void> _fetchPoster() async {
     if (_isLoading) return;
@@ -64,20 +66,15 @@ class _FileGridItemState extends State<FileGridItem> {
     });
 
     try {
-      // Step 1: Remove extension
       final originalName = widget.name.replaceAll(RegExp(r'\.[^.]+$'), '');
-
-      // Step 2: Extract year (if any)
       final yearMatch = RegExp(r'(19|20)\d{2}').firstMatch(originalName);
       final year = yearMatch?.group(0);
 
-      // Step 3: Remove year from title
       String cleanTitle = originalName;
       if (yearMatch != null) {
         cleanTitle = originalName.substring(0, yearMatch.start);
       }
 
-      // Step 4: Clean title (special chars etc)
       cleanTitle = cleanTitle.replaceAll(RegExp(r'[\W_]+'), ' ').trim();
 
       if (cleanTitle.isEmpty) {
@@ -85,20 +82,14 @@ class _FileGridItemState extends State<FileGridItem> {
         return;
       }
 
-      // Step 5: Try movie search with year first
       bool success = false;
       if (year != null) {
         success = await _searchTmdb(cleanTitle, year: year, isMovie: true);
       }
-
-      // Step 6: Fallback movie search without year
       if (!success) {
         success = await _searchTmdb(cleanTitle, isMovie: true);
       }
-
-      // Step 7: If movie search failed, try TV shows search
       if (!success) {
-        // Clean TV show title to remove episodes info
         final tvTitle = _cleanTvShowTitle(cleanTitle);
         if (tvTitle.isNotEmpty) {
           if (year != null) {
@@ -137,10 +128,16 @@ class _FileGridItemState extends State<FileGridItem> {
       if (results.isNotEmpty) {
         final posterPath = results[0]['poster_path'] as String?;
         if (posterPath != null) {
+          final url = '$_tmdbImageBaseUrl$posterPath';
+
+          // Cache the URL globally for this filename
+          FileGridItem._posterUrlCache[widget.name] = url;
+
           setState(() {
-            _posterUrl = '$_tmdbImageBaseUrl$posterPath';
+            _posterUrl = url;
           });
-          debugPrint("✅ Poster found for $type '$query${year != null ? ' ($year)' : ''}': $_posterUrl");
+
+          debugPrint("✅ Poster found for $type '$query${year != null ? ' ($year)' : ''}': $url");
           return true;
         } else {
           debugPrint("⚠️ No poster path in $type result for '$query${year != null ? ' ($year)' : ''}'");
@@ -154,7 +151,6 @@ class _FileGridItemState extends State<FileGridItem> {
 
     return false;
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -171,15 +167,16 @@ class _FileGridItemState extends State<FileGridItem> {
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: SizedBox(
-                height: 200,  // Adjust height as needed
-                width: 150,   // Adjust width as needed
+                height: 200,
+                width: 150,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: _isLoading
-                      ? const Center(child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 3.0,
-                  ),
+                      ? const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 3.0,
+                    ),
                   )
                       : _posterUrl != null && _isVideo
                       ? CachedNetworkImage(
@@ -194,6 +191,7 @@ class _FileGridItemState extends State<FileGridItem> {
                       size: 48,
                       color: isFolder ? Colors.amber : Colors.blueGrey,
                     ),
+                    fadeInDuration: Duration.zero,
                   )
                       : Icon(
                     isFolder ? Icons.folder : Icons.movie_creation_outlined,
@@ -204,7 +202,6 @@ class _FileGridItemState extends State<FileGridItem> {
               ),
             ),
           ),
-          // const SizedBox(height: 6),
           SizedBox(
             width: 130,
             child: Text(
@@ -212,13 +209,10 @@ class _FileGridItemState extends State<FileGridItem> {
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                  fontSize: 12,
-                color: Colors.white
-              ),
+              style: const TextStyle(fontSize: 12, color: Colors.white),
             ),
           ),
-          SizedBox(height: 10,)
+          const SizedBox(height: 10),
         ],
       ),
     );
