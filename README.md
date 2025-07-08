@@ -1,7 +1,6 @@
 # 🎥 Flexio
 
-**Flexio** is a powerful and elegant Flutter video player app that supports streaming content directly from **SMB** network shares. Designed to be a media hub for your movies and TV shows, Flexio automatically fetches rich metadata (like posters, cast, synopsis) to enhance your experience.
-
+**Flexio** is my personal Flutter-powered video player app designed to stream and organize videos from SMB network shares. It automatically fetches movie and TV show metadata from TMDb, turning my media folders into a smart, poster-rich library.
 ---
 
 ## 🚀 Features
