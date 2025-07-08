@@ -1,4 +1,3 @@
-import 'package:flexio/videoPlayerScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:samba_browser/samba_browser.dart';
 import 'gridItem.dart';
@@ -25,7 +24,7 @@ class FileBrowserScreen extends StatefulWidget {
 class _FileBrowserScreenState extends State<FileBrowserScreen>
     with SingleTickerProviderStateMixin {
   List<Map<String, String>> _allFiles = [];
-  ContentFilter _currentFilter = ContentFilter.all;
+  final ContentFilter _currentFilter = ContentFilter.all;
   bool _loading = false;
   String _status = '';
   String _currentPath = '';
@@ -56,9 +55,9 @@ class _FileBrowserScreenState extends State<FileBrowserScreen>
   bool _isMovie(String fileName) {
     final lower = fileName.toLowerCase();
     return (lower.endsWith('.mp4') ||
-        lower.endsWith('.mkv') ||
-        lower.endsWith('.avi') ||
-        lower.endsWith('.mov')) &&
+            lower.endsWith('.mkv') ||
+            lower.endsWith('.avi') ||
+            lower.endsWith('.mov')) &&
         !_isTvShow(fileName);
   }
 
@@ -92,18 +91,21 @@ class _FileBrowserScreenState extends State<FileBrowserScreen>
       final rawFiles = List<String>.from(shares.cast<String>());
 
       setState(() {
-        _allFiles = rawFiles.where((fullPath) {
-          final parts = fullPath.split('/');
-          final name = parts.isNotEmpty
-              ? parts.lastWhere((p) => p.isNotEmpty, orElse: () => '')
-              : '';
-          return !_isSystemShare(name);
-        }).map((fullPath) {
-          final name = fullPath.split('/').lastWhere(
-                  (p) => p.isNotEmpty,
-              orElse: () => fullPath);
-          return {'name': name, 'fullPath': fullPath};
-        }).toList();
+        _allFiles = rawFiles
+            .where((fullPath) {
+              final parts = fullPath.split('/');
+              final name = parts.isNotEmpty
+                  ? parts.lastWhere((p) => p.isNotEmpty, orElse: () => '')
+                  : '';
+              return !_isSystemShare(name);
+            })
+            .map((fullPath) {
+              final name = fullPath
+                  .split('/')
+                  .lastWhere((p) => p.isNotEmpty, orElse: () => fullPath);
+              return {'name': name, 'fullPath': fullPath};
+            })
+            .toList();
 
         _status = 'Found ${_allFiles.length} items';
       });
@@ -126,7 +128,8 @@ class _FileBrowserScreenState extends State<FileBrowserScreen>
       final fullPath = file['fullPath']!;
       final lowerName = name.toLowerCase();
       final isImage = lowerName.endsWith('.jpg') || lowerName.endsWith('.png');
-      final isVideo = lowerName.endsWith('.mp4') ||
+      final isVideo =
+          lowerName.endsWith('.mp4') ||
           lowerName.endsWith('.mkv') ||
           lowerName.endsWith('.avi') ||
           lowerName.endsWith('.mov');
@@ -148,7 +151,11 @@ class _FileBrowserScreenState extends State<FileBrowserScreen>
           MaterialPageRoute(
             builder: (_) => MovieDetailScreen(
               name: name,
-              originalName: name.replaceAll(RegExp(r'\.(mp4|mkv|avi|mov)$'), ''), fullPath: '', // pass cleaned name
+              originalName: name.replaceAll(
+                RegExp(r'\.(mp4|mkv|avi|mov)$'),
+                '',
+              ),
+              fullPath: '', // pass cleaned name
             ),
           ),
         );
@@ -180,9 +187,10 @@ class _FileBrowserScreenState extends State<FileBrowserScreen>
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Text('Flexio',
-            style: TextStyle(
-                fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text(
+          'Flexio',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         bottom: TabBar(
           controller: _tabController,
           dividerColor: Colors.black38,
@@ -209,28 +217,30 @@ class _FileBrowserScreenState extends State<FileBrowserScreen>
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : TabBarView(
-        controller: _tabController,
-        children: ContentFilter.values.map((filter) {
-          final visibleFiles = _filterFiles(filter);
-          return Padding(
-            padding: const EdgeInsets.all(12),
-            child: GridView.builder(
-              itemCount: visibleFiles.length,
-              gridDelegate:
-              const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3, childAspectRatio: 0.7),
-              itemBuilder: (context, index) {
-                final file = visibleFiles[index];
-                return FileGridItem(
-                  key: ValueKey(file['fullPath']),
-                  name: file['name']!,
-                  onTap: () => _handleTap(file),
+              controller: _tabController,
+              children: ContentFilter.values.map((filter) {
+                final visibleFiles = _filterFiles(filter);
+                return Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: GridView.builder(
+                    itemCount: visibleFiles.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 0.7,
+                        ),
+                    itemBuilder: (context, index) {
+                      final file = visibleFiles[index];
+                      return FileGridItem(
+                        key: ValueKey(file['fullPath']),
+                        name: file['name']!,
+                        onTap: () => _handleTap(file),
+                      );
+                    },
+                  ),
                 );
-              },
+              }).toList(),
             ),
-          );
-        }).toList(),
-      ),
     );
   }
 }

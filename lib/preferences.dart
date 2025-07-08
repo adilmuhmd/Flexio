@@ -16,9 +16,9 @@ class Preferences {
   static Future<Map<String, String>> load() async {
     final prefs = await SharedPreferences.getInstance();
     return {
-      'host': prefs.getString(_hostKey) ?? '',
-      'user': prefs.getString(_userKey) ?? '',
-      'pass': prefs.getString(_passKey) ?? '',
+      'host': prefs.getString(_hostKey) ?? 'smb://192.168.0,1',
+      'user': prefs.getString(_userKey) ?? 'adil',
+      'pass': prefs.getString(_passKey) ?? '1234',
     };
   }
 }

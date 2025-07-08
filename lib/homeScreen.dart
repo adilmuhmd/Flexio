@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'server_credentials_screen.dart';
 import 'file_browser_screen.dart';
 
@@ -30,6 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
       return ServerCredentialsScreen(onCredentialsSaved: _onCredentialsSaved);
     }
 
-    return FileBrowserScreen(host: _host!, user: _user ?? '', pass: _pass ?? '');
+    return FileBrowserScreen(
+      host: _host!,
+      user: _user ?? '',
+      pass: _pass ?? '',
+    );
   }
 }

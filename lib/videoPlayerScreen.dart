@@ -1,6 +1,3 @@
-
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 
@@ -24,10 +21,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       widget.videoUrl,
       autoPlay: true,
       options: VlcPlayerOptions(
-        advanced: VlcAdvancedOptions([
-          '--network-caching=1000',
-          '--rtsp-tcp',
-        ]),
+        advanced: VlcAdvancedOptions(['--network-caching=1000', '--rtsp-tcp']),
       ),
     );
 
@@ -50,21 +44,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.videoUrl
-            .split('/')
-            .last),
-      ),
+      appBar: AppBar(title: Text(widget.videoUrl.split('/').last)),
       body: Center(
         child: _isPlaying
             ? AspectRatio(
-          aspectRatio: 16 / 9,
-          child: VlcPlayer(
-            controller: _vlcController,
-            aspectRatio: 16 / 9,
-            placeholder: const Center(child: CircularProgressIndicator()),
-          ),
-        )
+                aspectRatio: 16 / 9,
+                child: VlcPlayer(
+                  controller: _vlcController,
+                  aspectRatio: 16 / 9,
+                  placeholder: const Center(child: CircularProgressIndicator()),
+                ),
+              )
             : const CircularProgressIndicator(),
       ),
     );
