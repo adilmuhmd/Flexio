@@ -28,13 +28,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   bool _loading = true;
 
 
-  static final _tmdbApiKey = dotenv.env['TMDB_API_KEY'] ?? '';
+  late String _tmdbApiKey;
   static const _tmdbBaseUrl = 'https://api.themoviedb.org/3';
   static const _tmdbImageBaseUrl = 'https://image.tmdb.org/t/p/w500';
 
   @override
   void initState() {
     super.initState();
+    _tmdbApiKey = dotenv.env['TMDB_API_KEY'] ?? '';
     _fetchTmdbData();
   }
 

@@ -22,14 +22,16 @@ class _FileGridItemState extends State<FileGridItem> {
   bool _isLoading = false;
   bool _isVideo = false;
 
-  static final _tmdbApiKey = dotenv.env['TMDB_API_KEY'] ?? '';
+  late String _tmdbApiKey;
   static const String _tmdbBaseUrl = 'https://api.themoviedb.org/3';
   static const String _tmdbImageBaseUrl = 'https://image.tmdb.org/t/p/w185';
 
   @override
   void initState() {
     super.initState();
+    _tmdbApiKey = dotenv.env['TMDB_API_KEY'] ?? '';
     _isVideo = _isVideoFile(widget.name);
+
 
     if (_isVideo) {
       // Check if cached URL exists and set immediately

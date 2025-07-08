@@ -6,14 +6,10 @@ import 'homeScreen.dart';
 
 
 void main() async {
-  if (dotenv.env['TMDB_API_KEY'] == null) {
-    print("❌ .env file not loaded properly");
-  } else {
-    print("✅ TMDB_API_KEY loaded: ${dotenv.env['TMDB_API_KEY']}");
-  }
-
   WidgetsFlutterBinding.ensureInitialized(); // Required
-  await dotenv.load(); // ✅ loads .env from root
+
+
+  await dotenv.load(fileName: ".env"); // ✅ loads .env from root
 
   runApp(SmbApp());
 }
